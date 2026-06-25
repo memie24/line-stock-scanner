@@ -54,11 +54,17 @@
               type: "text",
               text: decodedText 
             }]).then(() => {
+              // ถ้าส่งสำเร็จ ให้ปิดหน้าต่างสแกนทันที
               liff.closeWindow(); 
+            }).catch((error) => {
+              // 🚨 ถ้าส่งเข้าแชทไม่สำเร็จ ให้โชว์ Error บนหน้าจอทันที
+              document.getElementById('status').innerText = "❌ ส่งข้อความเข้าแชทไม่สำเร็จ";
+              alert("LINE บล็อกการส่งข้อความเนื่องจาก: " + error.message);
             });
           } else {
-            alert("ผลการสแกน: " + decodedText);
+            alert("ผลการสแกน (นอกแอป LINE): " + decodedText);
           }
+          
         },
         (errorMessage) => {
           // ซ่อน error ปลีกย่อยระหว่างส่องหาบาร์โค้ด
