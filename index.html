@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>สแกนบาร์โค้ด / QR Code</title>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    body { margin: 0; padding: 0; background-color: #000; color: #fff; text-align: center; font-family: sans-serif; }
+    #reader { width: 100vw; height: 100vh; object-fit: cover; }
+    #status { position: absolute; bottom: 20px; width: 100%; text-align: center; font-size: 18px; z-index: 10; }
+  </style>
+</head>
+<body>
+  
+  <div id="reader"></div>
+  <div id="status">กำลังเปิดกล้อง...</div>
+
+  <script>
+    // ใส่ LIFF ID ของคุณที่ได้จาก LINE Developers (ขั้นตอนที่ 3)
+    const LIFF_ID = "2010383385-bROORJh7"; 
+
+    async function main() {
+      try {
+        await liff.init({ liffId: LIFF_ID });
+        if (!liff.isLoggedIn()) {
+          liff.login();
+          return;
+        }
+        startScanner();
+      } catch (err) {
+        document.getElementById('status').innerText = "เกิดข้อผิดพลาดในการเชื่อมต่อ LINE";
+      }
+    }
+
+    function startScanner() {
+      document.getElementById('status').innerText = "กำลังเรียกใช้งานกล้องหลัง...";
+      
+      const html5QrCode = new Html5Qrcode("reader");
+      const config = { fps: 10, qrbox: { width: 250, height: 150 } }; 
+
+      // ปรับลบ exact ออก ให้เหลือแค่ "environment" เพื่อให้รองรับมือถือทุกรุ่นอย่างยืดหยุ่น
+      html5QrCode.start(
+        { facingMode: "environment" }, 
+        config,
+        (decodedText, decodedResult) => {
+          // เมื่อสแกนสำเร็จ
+          html5QrCode.stop();
+          document.getElementById('status').innerText = "สแกนสำเร็จ! กำลังค้นหา...";
+          
+          if (liff.isInClient()) {
+            liff.sendMessages([{
+              type: "text",
+              text: decodedText 
+            }]).then(() => {
+              liff.closeWindow(); 
+            });
+          } else {
+            alert("ผลการสแกน: " + decodedText);
+          }
+        },
+        (errorMessage) => {
+          // ซ่อน error ปลีกย่อยระหว่างส่องหาบาร์โค้ด
+        }
+      ).catch((err) => {
+        // หากกล้องเปิดไม่ได้จริงๆ ระบบจะโชว์ชื่อ Error บนจอมือถือทันทีเพื่อให้รู้สาเหตุ
+        document.getElementById('status').innerText = "❌ ไม่สามารถเปิดกล้องได้: " + err;
+      });
+    }
+
+    // เริ่มทำงานเมื่อโหลดหน้าเว็บเสร็จ
+    window.onload = main;
+  </script>
+</body>
+</html>
